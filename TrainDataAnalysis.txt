@@ -1,0 +1,199 @@
+install.packages(“tidyverse”) # no instalar nuevamente si lo tienen instalado
+install.packages(“DescTools”) # instalar si no lo tienen instalado
+install.packages(“car”) # instalar si no lo tienen instalado
+install.packages("ggplot2") # instalar si no lo tienen instalado
+
+library(tidyverse)
+library(DescTools)
+library(car)
+library(ggplot2)
+
+# definir directorio de trabajo
+setwd("D:/Users/Josef/Desktop")
+dir()
+
+# cargar el conjunto de datos
+train <- read.csv("train.csv", stringsAsFactors = FALSE, header = T, encoding = "UTF-8")
+is.factor(train$PClas)
+train$PClas <- as.factor(train$Pclass)
+str(train)
+
+# encontrar la media de la tarifa (Fare)
+mean(train$Fare)
+
+# usando la función de R mode()
+mode(train$Age)
+
+# usando un método simple parecido al del laboratorio 1
+actual_mode <- table(train$Age)   #creates a table of all age groups
+
+# usamos la función max() para encontrar el valor más frecuente
+names(actual_mode)[actual_mode == max(actual_mode)]
+
+# encontrar la mediana de la tarifa (Fare)
+median(train$Fare)
+
+# encontrar el rango de la tarifa (Fare)
+range(train$Fare)
+
+# usando R básico grafiquemos un boxplot
+boxplot(train$Age ~ train$Pclass, xlab = "Class", ylab = "Age", col = c("blue"))
+
+# Varianza y Desviación estandar.
+var(train$Fare)
+sd(train$Fare)
+
+# mediana, media, varianza y desviación estándar.
+median(train$Age, na.rm = TRUE)
+mean(train$Age, na.rm = TRUE)
+var(train$Age, na.rm = TRUE)
+sd(train$Age, na.rm = TRUE)
+
+# Análisis de distribución.
+plot(density(train$Age, na.rm = TRUE))
+
+ggplot(train) +
+  aes(x = Age) +
+  geom_density()
+
+# normal
+qqPlot(log(train$Age), grid = TRUE)
+
+# Calcule la prueba z
+# Debemos crear un subconjunto para los pasajeros de la clase alta
+
+new_data <-train[!(train$PClas > 1 ),]
+table(new_data$PClas)
+table(train$PClas)
+table(new_data$PClas)
+
+# Esto anterior lo Podemos aplicar para crear condiciones y crear splits # parar 2 y 3 usando ampersand (&) df <- df[!(df$col1==2 & d$col1==3),]
+
+#función para la prueba z
+z.test2 = function(a, b, n, tails){
+  sample_mean = mean(a) # media muestral
+  pop_mean = mean(b) # media poblacional
+  c = nrow(n) # número de observaciones
+  var_b = var(b) # varianza poblacional
+  zeta = (sample_mean - pop_mean) / (sqrt(var_b/c))
+  if (tails == 1){
+    p <- pnorm(-abs(zeta))
+  } else if (tails == 2) {
+    p <- 2*pnorm(-abs(zeta))
+  } else {
+    print("no tiene 1 o 2 colas, no es posible realizar la prueba")
+    return(0)
+  }
+  print("El valor P es: ")
+  print(p)
+  return(zeta)
+}
+
+# Llame la función
+z.test2(new_data$Survived, train$Survived, new_data, 2)
+
+
+# Prueba de chi-cuadrado para determinar independencia entre Sobrevivencia, Sexo y Clase
+chisq.test(train$Survived, train$Sex)
+
+# Otra manera de realizar la prueba de chi-cuadrado
+summary(table(train$Survived,train$Pclass))
+
+ContCoef(train$Survived, train$Sex,
+         correct = TRUE)
+
+ContCoef(train$Survived, train$Pclass,
+         correct = TRUE)
+
+plot(train$Fare, train$Age, xlab = 'Fare', ylab = 'Age')
+
+cor.test(train$Age, train$Fare,
+         method = "pearson")
+
+cor.test(train$Age, train$Fare,
+         method = "pearson")
+
+cor.test(train$Pclass, train$Fare,
+         method = "pearson")
+
+# Parte II - La Prueba T
+# Datos en 2 vectores numéricos
+women_weight <- c(38.9, 61.2, 73.3, 21.8, 63.4, 64.6, 48.4, 48.8, 48.5)
+
+men_weight <- c(67.8, 60, 63.4, 76, 89.4, 73.3, 67.3, 61.3, 62.4)
+
+# Creamos el conjunto de datos
+my_data <- data.frame( group = rep(c("Woman", "Man"), each = 9),
+                       weight = c(women_weight, men_weight))
+
+# Revisamos el conjunto de datos
+print(my_data)
+
+#Calculamos las estadísticas básicas por grupo (hombre y mujer) provenientes del conjunto de datos
+group_by(my_data, group) %>%
+  summarize(
+    count = n(),
+    mean = mean(weight, na.rm = TRUE),
+    sd = sd(weight, na.rm = TRUE))
+
+# grafiquemos un boxplot
+
+dev.off()
+
+qplot(group, weight, data = my_data, 
+      geom=c("boxplot"), colour = weight,
+      fill = group)
+
+# medianas por grupo
+median(men_weight)
+median(women_weight)
+
+
+# Prueba Shapiro-Wilk de normalidad en peso hombres
+with(my_data, shapiro.test(weight[group == "Man"]))
+
+# Prueba Shapiro-Wilk de normalidad en peso mujeres
+with(my_data, shapiro.test(weight[group == "Woman"]))
+
+# QQPlot en peso hombres
+with(my_data, qqPlot(weight[group == "Man"]))
+
+# QQPlot en Peso en peso mujeres
+with(my_data, qqPlot(weight[group == "Woman"]))
+
+# La homogeneidad de las varianzas se debe probar con el fin de determinar el tipo de prueba de medias o comparación de medias que vamos a realizar. Esto lo llevamos a cabo con la prueba F. La cual llamamos con var.test() en R
+
+# Recuerden que ~ lo usamos para realizar comparaciones de elementos en # un data frame o una matriz
+f_test <- var.test(weight ~ group, data = my_data)
+f_test
+
+# Prueba T
+
+# Método 1
+t.res <- t.test(weight ~ group,
+                data = my_data,
+                var.equal = TRUE)
+
+t.res
+
+# Método 2
+t.res.2 <- t.test(women_weight,
+                  men_weight,
+                  var.equal = TRUE)
+t.res.2
+
+#Pruebas de una cola
+
+one.tail.test <- t.test(women_weight, men_weight,
+                        var.equal = TRUE,
+                        alternative = "less")
+
+one.tail.test
+
+#Pruebas de una cola
+
+one.tail.test <- t.test(women_weight, men_weight,
+                        var.equal = TRUE,
+                        alternative = "greater")
+
+one.tail.test
